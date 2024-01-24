@@ -23,10 +23,10 @@ const accessChat = async (req, res) => {
   try {
     let isChat = await chatServices.accessChat(query);
 
-    let isChats = await Users.populate(isChat, {
-      path: "lastMessage.senderId",
-      select: "name, email, pic",
-    });
+    // let isChats = await Users.populate(isChat, {
+    //   path: "lastMessage.senderId",
+    //   select: "name, email, pic",
+    // });
     // means have previous chats
     if (isChat.length > 0) {
       return res.status(200).json({
@@ -44,11 +44,18 @@ const accessChat = async (req, res) => {
         users: [loggedUser._id, userId],
       };
       const newChat = await chatServices.createChat(chatData);
+      let fullChat = await chatServices.accessChat({ _id: newChat._id });
+
+      // const newCh = await newChat.populate(newChat, {
+      //   path: "users",
+      //   select: "name, email, pic",
+      // });
+
       return res.status(200).json({
         success: true,
         message: "Chat created successfully",
         data: {
-          chats: newChat,
+          chats: fullChat,
         },
       });
     }
@@ -121,7 +128,6 @@ const createGroupChat = async (req, res) => {
 
     let fullChat = await chatServices.accessChat({ _id: groupChat._id });
 
-    console.log(fullChat);
     // let isChats = await Users.populate(isChat, {
     //   path: "lastMessage.senderId",
     //   select: "name, email, pic",
@@ -130,7 +136,7 @@ const createGroupChat = async (req, res) => {
     if (fullChat.length > 0) {
       return res.status(200).json({
         success: true,
-        message: "Group created.",
+        message: "Group Created Successfully.",
         data: {
           chats: fullChat,
         },

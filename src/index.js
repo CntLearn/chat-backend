@@ -7,11 +7,12 @@ dotenv.config();
 const mongoConnection = require("./config/db");
 const routes = require("./routes");
 const { notFound, errorHandler } = require("./middleware/errors");
+const messenger = require("./messenger");
 
 mongoConnection();
 // to get data from body
 app.use(express.json());
-//get data from url encoded
+//get data from url encoded, to get data from query
 app.use(express.urlencoded({ extended: true }));
 
 // to handle cors
@@ -27,10 +28,11 @@ app.use(cors(corsOptions));
 app.use(morgan("tiny"));
 
 app.get("/", (req, res) => {
-  res.send("Servicer is listening OK");
+  res.send("Service is listening OK");
 });
 
 app.use("/api", routes);
+app.use("/api/messenger", messenger);
 
 /// error handlers
 app.use(notFound);
@@ -53,6 +55,26 @@ const io = require("socket.io")(server, {
   },
 });
 
+// for messenger users
+let onlineUsers = [];
+
+const addUser = (newUser, socketId) => {
+  // if not already in online state then add it.
+  if (onlineUsers.some((user) => user.user._id === newUser._id)) {
+    return;
+  }
+  // if (onlineUsers.includes(userId)) return;
+  else {
+    onlineUsers.push({ user: { ...newUser }, socketId });
+  }
+};
+
+const removeUser = (socketId) => {
+  onlineUsers = onlineUsers.filter((user) => user.socketId !== socketId);
+};
+const findUser = (userId) => {
+  return onlineUsers.find((user) => user.user._id === userId);
+};
 io.on("connection", (socket) => {
   console.log("Connected to Socket.io");
   const count = io.engine.clientsCount;
@@ -62,6 +84,9 @@ io.on("connection", (socket) => {
   socket.on("setup", (userData) => {
     socket.join(userData._id);
     socket.emit("connected");
+    setTimeout(() => {
+      socket.emit("audio");
+    }, 5000);
   });
 
   // on joining a room / single chat. 2
@@ -93,5 +118,33 @@ io.on("connection", (socket) => {
   socket.off("setup", () => {
     console.log("user left is ");
     socket.leave(userData._id);
+  });
+
+  // MESSENGER EVENTS SETUP.
+
+  socket.on("addUser", (newUser) => {
+    addUser(newUser, socket.id);
+    // update the status of online users.
+    io.emit("getUsers", onlineUsers);
+  });
+
+  // send and receive messages.
+  socket.on("sendMessage", (message) => {
+    // in message object
+    console.log("message: ", message);
+    const receiverUser = findUser(message.receiverId);
+    console.log(receiverUser, 999999999);
+    const msg = {
+      sender: message.sender,
+      text: message.text,
+      createdAt: new Date(),
+    };
+    socket.to(receiverUser.socketId).emit("getMessages", msg);
+  });
+
+  socket.on("disconnect", () => {
+    removeUser(socket.id);
+    // update the status of online users.
+    io.emit("getUsers", onlineUsers);
   });
 });
