@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const { Conversation } = require("../../models");
-const { userServices } = require("../../services");
+const { searchByFilters } = require("../services/conversation");
 // new Conversation
 
 router.post("/", async (req, res) => {
@@ -13,9 +13,16 @@ router.post("/", async (req, res) => {
   try {
     const savedConversation = await newConversation.save();
 
-    res
-      .status(200)
-      .json({ success: true, data: { conversation: savedConversation } });
+    const filters = {
+      _id: savedConversation._id,
+    };
+
+    const conversation = await searchByFilters(filters);
+
+    res.status(200).json({
+      success: true,
+      data: { conversation: conversation },
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -30,31 +37,17 @@ router.post("/", async (req, res) => {
 router.get("/:userId", async (req, res) => {
   const { userId } = req.params;
   try {
-    let conversation = await Conversation.find({
+    const filters = {
       members: { $in: [userId] },
-    });
+    };
+
+    let conversation = await searchByFilters(filters);
+
     if (conversation.length === 0) {
       return res.status(200).json({ success: true, data: { conversation } });
     }
-    let members = conversation[0]?.members;
 
-    const friendId = members[0] === userId ? members[1] : members[0];
-
-    const friendInfo = await userServices.allUsers({ _id: friendId });
-
-    members = members.map((member) => {
-      if (member !== userId) {
-        return friendInfo[0];
-      }
-      // return member !== userId
-      //   ? { [friendId]: friendInfo[0] }
-      //   : { [userId]: userId };
-    });
-
-    let temp = [...conversation];
-    temp[0].members = members;
-
-    res.status(200).json({ success: true, data: { conversation: temp } });
+    res.status(200).json({ success: true, data: { conversation } });
   } catch (error) {
     res.status(500).json({
       success: false,

@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const { M_Message } = require("../../models");
+const { searchByFilters } = require("../services/m_message");
 
 // send message
 router.post("/", async (req, res) => {
@@ -14,7 +15,13 @@ router.post("/", async (req, res) => {
   try {
     const savedMessage = await newMessage.save();
 
-    res.status(200).json({ success: true, data: { message: savedMessage } });
+    const filters = {
+      _id: savedMessage._id,
+    };
+
+    const messages = await searchByFilters(filters);
+
+    res.status(200).json({ success: true, data: { message: messages } });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -29,9 +36,11 @@ router.post("/", async (req, res) => {
 router.get("/:conversationId", async (req, res) => {
   const { conversationId } = req.params;
   try {
-    const messages = await M_Message.find({
+    const filters = {
       conversationId,
-    }).populate("sender", "-password");
+    };
+
+    const messages = await searchByFilters(filters);
 
     res.status(200).json({ success: true, data: { messages } });
   } catch (error) {

@@ -59,14 +59,28 @@ const io = require("socket.io")(server, {
 let onlineUsers = [];
 
 const addUser = (newUser, socketId) => {
+  console.log("all ", onlineUsers);
   // if not already in online state then add it.
+
   if (onlineUsers.some((user) => user.user._id === newUser._id)) {
+    console.log("already has thisuser ");
+    let users = onlineUsers.map((user) => {
+      if (user.user._id === newUser._id) {
+        return {
+          ...user,
+          socketId,
+        };
+      }
+    });
+    console.log("users : ", users);
+    onlineUsers = users;
     return;
   }
   // if (onlineUsers.includes(userId)) return;
   else {
     onlineUsers.push({ user: { ...newUser }, socketId });
   }
+  console.log("online users : ", onlineUsers);
 };
 
 const removeUser = (socketId) => {
@@ -123,6 +137,8 @@ io.on("connection", (socket) => {
   // MESSENGER EVENTS SETUP.
 
   socket.on("addUser", (newUser) => {
+    console.log("new users ", newUser);
+    if (!newUser) return;
     addUser(newUser, socket.id);
     // update the status of online users.
     io.emit("getUsers", onlineUsers);
