@@ -59,48 +59,39 @@ const io = require("socket.io")(server, {
 let onlineUsers = [];
 
 const addUser = (newUser, socketId) => {
-  console.log("all ", onlineUsers);
-  // if not already in online state then add it.
-
-  if (onlineUsers.some((user) => user.user._id === newUser._id)) {
+  // if not already in online state then add it otherwise change the socketId.
+  if (onlineUsers.some((user) => user?.user._id === newUser._id)) {
     console.log("already has thisuser ");
-    let users = onlineUsers.map((user) => {
-      if (user.user._id === newUser._id) {
+    return onlineUsers.map((user) => {
+      if (user?.user._id === newUser._id) {
         return {
-          ...user,
+          user,
           socketId,
         };
       }
     });
-    console.log("users : ", users);
-    onlineUsers = users;
-    return;
-  }
-  // if (onlineUsers.includes(userId)) return;
-  else {
+  } else {
     onlineUsers.push({ user: { ...newUser }, socketId });
   }
-  console.log("online users : ", onlineUsers);
 };
 
 const removeUser = (socketId) => {
-  onlineUsers = onlineUsers.filter((user) => user.socketId !== socketId);
+  onlineUsers = onlineUsers.filter((user) => user?.socketId !== socketId);
 };
 const findUser = (userId) => {
   return onlineUsers.find((user) => user.user._id === userId);
 };
 io.on("connection", (socket) => {
   console.log("Connected to Socket.io");
-  const count = io.engine.clientsCount;
-  // console.log("count ", count);
+  // const count = io.engine.clientsCount;
 
   // initial setup , 1
   socket.on("setup", (userData) => {
     socket.join(userData._id);
     socket.emit("connected");
-    setTimeout(() => {
-      socket.emit("audio");
-    }, 5000);
+    // setTimeout(() => {
+    //   socket.emit("audio");
+    // }, 5000);
   });
 
   // on joining a room / single chat. 2
@@ -147,14 +138,16 @@ io.on("connection", (socket) => {
   // send and receive messages.
   socket.on("sendMessage", (message) => {
     // in message object
-    console.log("message: ", message);
+    // console.log("message: ", message);
     const receiverUser = findUser(message.receiverId);
-    console.log(receiverUser, 999999999);
+    if (!receiverUser) return;
+    // console.log("receiver User details : ", receiverUser);
     const msg = {
       sender: message.sender,
       text: message.text,
       createdAt: new Date(),
     };
+    console.log("emit just once ");
     socket.to(receiverUser.socketId).emit("getMessages", msg);
   });
 
@@ -164,3 +157,10 @@ io.on("connection", (socket) => {
     io.emit("getUsers", onlineUsers);
   });
 });
+
+/*
+  10 books
+  30 nain, choti, machan,
+  15 kk
+  20 sf, rm
+*/
