@@ -1,6 +1,7 @@
 const { Users } = require("../models");
 
 const register = (user) => {
+  console.log('register ', user)
   return Users.create(user);
 };
 const findByEmail = (email) => {

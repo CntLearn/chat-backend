@@ -7,8 +7,16 @@ const userSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    email: { type: String, required: true, max: 50, unique: true },
-    password: { type: String, required: true },
+    email: {
+      type: String,
+      required: true,
+      max: 50,
+      unique: true
+    },
+    password: {
+      type: String,
+      required: true
+    },
     pic: {
       type: String,
       default:
@@ -19,10 +27,10 @@ const userSchema = mongoose.Schema(
 
     username: {
       type: String,
-      require: true,
+      // require: true,
       min: 3,
       max: 20,
-      unique: true,
+      // unique: true,
     },
 
     coverPicture: {

@@ -9,6 +9,11 @@ const routes = require("./routes");
 const { notFound, errorHandler } = require("./middleware/errors");
 const messenger = require("./messenger");
 
+const port = process.env.PORT || 5000;
+
+// import messenger events required data from the onlineUsers file.
+const { addUser, removeUser, findUser, onlineUsers } = require('./OnlineUsers');
+
 mongoConnection();
 // to get data from body
 app.use(express.json());
@@ -44,8 +49,8 @@ app.use(errorHandler);
 
 // now start working with the socket.io
 
-const server = app.listen(5000, () => {
-  console.log("Server Listening on port", 5000);
+const server = app.listen(port, () => {
+  console.log("Server Listening on port", port);
 });
 
 const io = require("socket.io")(server, {
@@ -55,32 +60,7 @@ const io = require("socket.io")(server, {
   },
 });
 
-// for messenger users
-let onlineUsers = [];
 
-const addUser = (newUser, socketId) => {
-  // if not already in online state then add it otherwise change the socketId.
-  if (onlineUsers.some((user) => user?.user._id === newUser._id)) {
-    console.log("already has thisuser ");
-    return onlineUsers.map((user) => {
-      if (user?.user._id === newUser._id) {
-        return {
-          user,
-          socketId,
-        };
-      }
-    });
-  } else {
-    onlineUsers.push({ user: { ...newUser }, socketId });
-  }
-};
-
-const removeUser = (socketId) => {
-  onlineUsers = onlineUsers.filter((user) => user?.socketId !== socketId);
-};
-const findUser = (userId) => {
-  return onlineUsers.find((user) => user.user._id === userId);
-};
 io.on("connection", (socket) => {
   console.log("Connected to Socket.io");
   // const count = io.engine.clientsCount;
@@ -157,10 +137,3 @@ io.on("connection", (socket) => {
     io.emit("getUsers", onlineUsers);
   });
 });
-
-/*
-  10 books
-  30 nain, choti, machan,
-  15 kk
-  20 sf, rm
-*/

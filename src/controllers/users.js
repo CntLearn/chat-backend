@@ -4,7 +4,7 @@ const { userServices } = require("../services");
 
 const register = async (req, res) => {
   const { name, email, password, pic } = req.body;
-  console.log(req.body);
+  console.log("register boyd : ",req.body);
 
   if (!name || !email || !password) {
     return res.status(500).json({
@@ -15,6 +15,7 @@ const register = async (req, res) => {
   }
 
   const isExist = await userServices.findByEmail(email);
+  console.log('is exist ', isExist)
 
   if (isExist) {
     return res.status(400).json({
@@ -31,6 +32,10 @@ const register = async (req, res) => {
       password,
       ...(pic && { pic }),
     });
+
+    console.log('created ', created)
+    
+
     return res.status(200).json({
       success: true,
       message: "User created successfully",
@@ -44,10 +49,11 @@ const register = async (req, res) => {
       },
     });
   } catch (error) {
+    console.log('error ', error)
     return res.status(500).json({
       success: false,
       message: "Unable to create user with this email address",
-      reason: error.message || "Something went wrong",
+      reason: error?.message || "Something went wrong",
     });
   }
 };
