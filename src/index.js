@@ -12,7 +12,7 @@ const messenger = require("./messenger");
 const port = process.env.PORT || 5000;
 
 // import messenger events required data from the onlineUsers file.
-const { addUser, removeUser, findUser, onlineUsers } = require('./OnlineUsers');
+const { addUser, removeUser, findUser } = require('./OnlineUsers');
 
 mongoConnection();
 // to get data from body
@@ -62,7 +62,7 @@ const io = require("socket.io")(server, {
 
 
 io.on("connection", (socket) => {
-  console.log("Connected to Socket.io");
+  console.log("Connected to Socket.io : ", socket.id);
   // const count = io.engine.clientsCount;
 
   // initial setup , 1
@@ -108,11 +108,9 @@ io.on("connection", (socket) => {
   // MESSENGER EVENTS SETUP.
 
   socket.on("addUser", (newUser) => {
-    console.log("new users ", newUser);
     if (!newUser) return;
-    addUser(newUser, socket.id);
-    // update the status of online users.
-    io.emit("getUsers", onlineUsers);
+    const onlineAll = addUser(newUser, socket.id);
+    io.emit("getUsers", onlineAll);
   });
 
   // send and receive messages.
@@ -127,13 +125,12 @@ io.on("connection", (socket) => {
       text: message.text,
       createdAt: new Date(),
     };
-    console.log("emit just once ");
     socket.to(receiverUser.socketId).emit("getMessages", msg);
   });
 
   socket.on("disconnect", () => {
-    removeUser(socket.id);
+    const online = removeUser(socket.id);
     // update the status of online users.
-    io.emit("getUsers", onlineUsers);
+    io.emit("getUsers", online);
   });
 });
